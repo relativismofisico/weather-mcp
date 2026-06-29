@@ -70,6 +70,24 @@ IA: "¿Qué tiempo hace en Bogotá?"
 
 ---
 
+## Estructura del proyecto
+
+```
+weather-mcp/
+├── src/
+│   ├── index.ts          # Entrada: registro de herramientas MCP y arranque del servidor
+│   ├── handlers.ts       # Lógica de negocio de las 3 herramientas (testeable de forma aislada)
+│   ├── weather.ts        # Utilidades puras: geocodeCity, describeWeather, WMO_CODES
+│   └── __tests__/
+│       ├── weather.test.ts    # Tests de geocodificación y códigos WMO (9 tests)
+│       └── handlers.test.ts   # Tests de herramientas con fetch mockeado (31 tests)
+├── vitest.config.ts      # Configuración de tests y umbrales de cobertura (≥80%)
+├── tsconfig.json
+└── package.json
+```
+
+---
+
 ## Herramientas utilizadas
 
 | Herramienta | Versión | Propósito |
@@ -78,6 +96,8 @@ IA: "¿Qué tiempo hace en Bogotá?"
 | [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) | 1.13 | Protocolo MCP (servidor stdio) |
 | [Zod](https://zod.dev/) | 3.24 | Validación de esquemas de herramientas |
 | [tsx](https://github.com/privatenumber/tsx) | 4.19 | Ejecución directa de TypeScript en desarrollo |
+| [Vitest](https://vitest.dev/) | 3.x | Framework de tests unitarios |
+| [@vitest/coverage-v8](https://vitest.dev/guide/coverage) | 3.x | Cobertura de código con motor V8 |
 | [Open-Meteo Forecast API](https://open-meteo.com/en/docs) | — | Datos meteorológicos actuales y pronóstico |
 | [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) | — | Conversión ciudad → coordenadas |
 | [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api) | — | Índice UV y calidad del aire |
@@ -208,7 +228,52 @@ npx @modelcontextprotocol/inspector
 
 ---
 
+## Tests y cobertura
+
+El proyecto usa [Vitest](https://vitest.dev/) con cobertura por V8. Los umbrales mínimos configurados son **80%** en todas las métricas; actualmente se alcanza el **100%**.
+
+```bash
+# Ejecutar todos los tests
+npm test
+
+# Tests en modo watch (desarrollo)
+npm run test:watch
+
+# Tests con reporte de cobertura
+npm run test:coverage
+```
+
+### Resultado actual
+
+```
+-------------|---------|----------|---------|---------|
+File         | % Stmts | % Branch | % Funcs | % Lines |
+-------------|---------|----------|---------|---------|
+handlers.ts  |     100 |      100 |     100 |     100 |
+weather.ts   |     100 |      100 |     100 |     100 |
+-------------|---------|----------|---------|---------|
+All files    |     100 |      100 |     100 |     100 |
+```
+
+### Qué se testea
+
+| Módulo | Tests | Casos cubiertos |
+|---|---|---|
+| `weather.ts` | 9 | Todos los códigos WMO, fallback para código desconocido, geocodificación exitosa, errores HTTP, ciudad no encontrada, caracteres especiales |
+| `handlers.ts` | 31 | Día/noche, ubicación con y sin `admin1`, todos los rangos UV (Bajo→Extremo) y AQI (Buena→Insalubre), extracción de amanecer/atardecer, precipitación, propagación de errores HTTP en cada API |
+
+Los tests mockean `fetch` globalmente con `vi.stubGlobal` — no se realizan llamadas reales a la red.
+
+---
+
 ## Changelog
+
+### v0.2.0 — 2026-06-29
+
+- Refactorización: extracción de `weather.ts` (utilidades puras) y `handlers.ts` (lógica de herramientas) para habilitar tests unitarios sin dependencia del servidor MCP
+- 40 tests unitarios con **100% de cobertura** (statements, branches, functions, lines)
+- Configuración de Vitest con umbrales de cobertura ≥ 80%
+- `coverage/` excluido del repositorio vía `.gitignore`
 
 ### v0.1.0 — 2026-06-29
 
